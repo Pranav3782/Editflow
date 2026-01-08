@@ -1,0 +1,207 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    /* Primary Brand Colors */
+    --primary: 45 100% 60%;
+    --primary-foreground: 30 30% 10%;
+    
+    /* Background tones */
+    --background: 220 20% 97%;
+    --foreground: 220 20% 15%;
+    
+    /* Card surfaces */
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 15%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 15%;
+    
+    /* Secondary - soft muted tones */
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 20% 15%;
+    
+    /* Muted text and surfaces */
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 10% 55%;
+    
+    /* Accent - blue */
+    --accent: 214 80% 58%;
+    --accent-foreground: 0 0% 100%;
+    
+    /* Status colors */
+    --success: 152 55% 62%;
+    --success-foreground: 152 55% 15%;
+    --warning: 45 100% 65%;
+    --warning-foreground: 45 100% 20%;
+    --danger: 0 82% 68%;
+    --danger-foreground: 0 0% 100%;
+    
+    --destructive: 0 82% 68%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 220 14% 90%;
+    --input: 220 14% 90%;
+    --ring: 45 100% 65%;
+    
+    --radius: 1rem;
+    
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 220 20% 15%;
+    --sidebar-primary: 45 100% 65%;
+    --sidebar-primary-foreground: 220 20% 15%;
+    --sidebar-accent: 220 14% 96%;
+    --sidebar-accent-foreground: 220 20% 15%;
+    --sidebar-border: 220 14% 90%;
+    --sidebar-ring: 45 100% 65%;
+    
+    /* Custom gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(45 100% 65%) 0%, hsl(40 100% 58%) 100%);
+    --gradient-premium: linear-gradient(135deg, hsl(280 60% 55%) 0%, hsl(260 70% 60%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(220 20% 99%) 100%);
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.03);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.05);
+    --shadow-glow: 0 0 20px -5px hsl(45 100% 65% / 0.4);
+  }
+
+  .dark {
+    --background: 220 20% 10%;
+    --foreground: 220 14% 96%;
+    --card: 220 20% 13%;
+    --card-foreground: 220 14% 96%;
+    --popover: 220 20% 13%;
+    --popover-foreground: 220 14% 96%;
+    --primary: 45 100% 65%;
+    --primary-foreground: 220 20% 15%;
+    --secondary: 220 20% 18%;
+    --secondary-foreground: 220 14% 96%;
+    --muted: 220 20% 18%;
+    --muted-foreground: 220 10% 55%;
+    --accent: 214 80% 58%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 82% 68%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 20% 20%;
+    --input: 220 20% 20%;
+    --ring: 45 100% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer components {
+  /* Card hover effects */
+  .card-hover {
+    @apply transition-all duration-300 ease-out;
+  }
+  
+  .card-hover:hover {
+    @apply -translate-y-0.5;
+    box-shadow: var(--shadow-lg);
+  }
+  
+  /* Draggable card appearance */
+  .draggable-card {
+    @apply cursor-grab active:cursor-grabbing transition-all duration-200;
+  }
+  
+  .draggable-card:hover {
+    @apply -translate-y-0.5 scale-[1.02];
+    box-shadow: var(--shadow-lg);
+  }
+  
+  /* Capacity bar styles */
+  .capacity-bar {
+    @apply h-1.5 rounded-full overflow-hidden bg-secondary;
+  }
+  
+  .capacity-fill {
+    @apply h-full rounded-full transition-all duration-500 ease-out;
+  }
+  
+  /* Heatmap cell backgrounds */
+  .heatmap-open {
+    @apply bg-success/10;
+  }
+  
+  .heatmap-near {
+    @apply bg-warning/20;
+  }
+  
+  .heatmap-danger {
+    @apply bg-danger/15;
+  }
+  
+  /* Glass effect for nav */
+  .glass-nav {
+    @apply backdrop-blur-xl bg-card/80 border-b border-border/50;
+  }
+  
+  /* Premium glow */
+  .premium-glow {
+    box-shadow: var(--shadow-glow);
+  }
+  
+  /* Smooth transitions */
+  .smooth-transition {
+    @apply transition-all duration-300 ease-out;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .animate-fade-up {
+    animation: fadeUp 0.5s ease-out forwards;
+  }
+  
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out forwards;
+  }
+  
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
