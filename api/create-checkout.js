@@ -100,7 +100,9 @@ export default async function handler(req, res) {
                     plan_type: plan,  // For webhook handler
                     email: email      // For user identification
                 },
-                return_url: "https://editflow-ten.vercel.app/payment-success"
+                return_url: process.env.VERCEL_URL
+                    ? `https://${process.env.VERCEL_URL}/payment-success`
+                    : "http://localhost:3000/payment-success"
             })
         });
 
