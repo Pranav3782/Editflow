@@ -58,23 +58,34 @@ const PricingSection = () => {
   const navigate = useNavigate();
 
   const startCheckout = async (plan: string) => {
+    const apiUrl = `${window.location.origin}/api/create-checkout`;
+    console.log("Initiating checkout with URL:", apiUrl);
+
     try {
-      const res = await fetch("/api/create-checkout", {
+      if (!user?.email) {
+        toast.error("Please ensure you are logged in correctly.");
+        return;
+      }
+
+      const res = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           plan: plan,
           email: user?.email,
-          name: user?.user_metadata?.full_name || user?.email // Fallback to email if name missing
+          name: user?.user_metadata?.full_name || user?.email
         })
       });
 
+      console.log(`Checkout Response Status: ${res.status} ${res.statusText}`);
       const contentType = res.headers.get("content-type");
+      console.log("Response Content-Type:", contentType);
+
       if (!contentType || !contentType.includes("application/json")) {
-        // This usually happens when Vite returns the HTML index page for a 404 API route
         const text = await res.text();
-        console.error("API Error (Non-JSON response):", text.slice(0, 200));
-        throw new Error("API endpoint not working. Are you running with 'npx vercel dev'?");
+        console.error("API Error (Non-JSON response):", text.slice(0, 500));
+        toast.error(`Error 404: The API endpoint was not found. Please ensure you are using the correct deployment URL.`);
+        return;
       }
 
       const data = await res.json();
@@ -84,11 +95,12 @@ const PricingSection = () => {
       }
 
       if (data.checkoutUrl) {
+        console.log("Redirecting to:", data.checkoutUrl);
         window.location.href = data.checkoutUrl;
       }
     } catch (error: any) {
       console.error("Checkout Error Details:", error);
-      toast.error(error.message || 'Failed to start checkout. Check browser console for details.');
+      toast.error(`Checkout Error: ${error.message}`);
     }
   };
 
