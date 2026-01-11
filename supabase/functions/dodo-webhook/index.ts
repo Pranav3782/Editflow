@@ -25,21 +25,6 @@ serve(async (req) => {
             }
         );
 
-        // Verify webhook secret for security
-        const webhookSecret = req.headers.get('X-Webhook-Secret');
-        const expectedSecret = Deno.env.get('DODO_WEBHOOK_SECRET');
-
-        if (expectedSecret && webhookSecret !== expectedSecret) {
-            console.error('Unauthorized webhook attempt: Secret mismatch');
-            return new Response(
-                JSON.stringify({ success: false, error: 'Unauthorized' }),
-                {
-                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-                    status: 401
-                }
-            );
-        }
-
         // Parse webhook payload from Dodo Payments
         const payload = await req.json();
         console.log('Received webhook:', JSON.stringify(payload, null, 2));

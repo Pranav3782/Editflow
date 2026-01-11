@@ -11,15 +11,12 @@ export default async function handler(req, res) {
     }
 
     // Set CORS headers to allow requests from the frontend
-    const origin = req.headers.origin || '*';
-    const allowedOrigins = [
-        process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '',
-        'http://localhost:3000',
-        'http://localhost:8080'
-    ].filter(Boolean);
-
-    if (allowedOrigins.includes(origin) || !process.env.VERCEL_URL) {
+    // In production, we allow the request origin if it exists to support custom domains
+    const origin = req.headers.origin;
+    if (origin) {
         res.setHeader('Access-Control-Allow-Origin', origin);
+    } else {
+        res.setHeader('Access-Control-Allow-Origin', '*');
     }
 
     res.setHeader('Access-Control-Allow-Credentials', true);
