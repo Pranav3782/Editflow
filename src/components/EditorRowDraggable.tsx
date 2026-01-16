@@ -7,25 +7,33 @@ interface EditorRowDraggableProps {
   id: string;
   name: string;
   capacity: number;
+  dailyCapacity?: number;
   jobs: Job[];
   showHeatmap: boolean;
   onDeleteJob?: (jobId: string) => void;
   onUpdateJob: (jobId: string, updates: Partial<Job>) => void;
+  onJobClick?: (jobId: string) => void;
 }
 
 const allDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-const EditorRowDraggable = ({ id, name, capacity, jobs, showHeatmap, onDeleteJob, onUpdateJob }: EditorRowDraggableProps) => {
-  const getHeatmapClass = (dayIndex: number) => {
+const EditorRowDraggable = ({ id, name, capacity, dailyCapacity, jobs, showHeatmap, onDeleteJob, onUpdateJob, onJobClick }: EditorRowDraggableProps) => {
+  const dailyCap = dailyCapacity || 8;
+
+  const getHeatmapClass = (totalHours: number) => {
     if (!showHeatmap) return '';
-
-    const dayJobs = jobs.filter(job => job.scheduledDate === dayIndex);
-    const totalHours = dayJobs.reduce((sum, job) => sum + job.estimatedHours, 0);
-
     if (totalHours === 0) return 'heatmap-open';
-    if (totalHours >= 8) return 'heatmap-danger';
-    if (totalHours >= 5) return 'heatmap-near';
+    if (totalHours > dailyCap) return 'heatmap-danger';
+    if (totalHours >= (dailyCap * 0.8)) return 'heatmap-near';
     return 'heatmap-open';
+  };
+
+  const getInfoText = (totalHours: number) => {
+    if (!showHeatmap && totalHours === 0) return undefined;
+    const remaining = dailyCap - totalHours;
+    if (remaining < 0) return `${Math.abs(remaining)}h over`;
+    if (remaining === 0) return 'Full';
+    return `${remaining}h left`;
   };
 
   return (
@@ -47,15 +55,19 @@ const EditorRowDraggable = ({ id, name, capacity, jobs, showHeatmap, onDeleteJob
       {/* Day Cells - Always show all 7 days */}
       {allDays.map((day, dayIndex) => {
         const dayJobs = jobs.filter(job => job.scheduledDate === dayIndex);
+        const totalHours = dayJobs.reduce((sum, job) => sum + job.estimatedHours, 0);
+
         return (
           <DroppableCell
             key={`${id}-${dayIndex}`}
             editorId={id}
             dayIndex={dayIndex}
             jobs={dayJobs}
-            heatmapClass={getHeatmapClass(dayIndex)}
+            heatmapClass={getHeatmapClass(totalHours)}
+            infoText={showHeatmap ? getInfoText(totalHours) : undefined}
             onDeleteJob={onDeleteJob}
             onUpdateJob={onUpdateJob}
+            onJobClick={onJobClick}
           />
         );
       })}

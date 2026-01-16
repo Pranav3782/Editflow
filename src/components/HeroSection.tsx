@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Play, ArrowRight } from 'lucide-react';
+import { Play, ArrowRight, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import InteractiveEditorPlanner from './InteractiveEditorPlanner';
 
@@ -35,6 +35,17 @@ const HeroSection = () => {
               <a href="#interactive-demo">
                 <Play size={18} />
                 See How It Works
+              </a>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="text-warning border-warning hover:bg-warning/10 hover:text-warning gap-2 h-12 px-8">
+              <a
+                href="https://linktr.ee/entrext.pro"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Join the EditFlow newsletter"
+              >
+                <Mail size={18} />
+                Join the Newsletter
               </a>
             </Button>
           </div>

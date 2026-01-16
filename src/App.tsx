@@ -13,9 +13,12 @@ import { useTheme } from "@/hooks/useTheme";
 
 const queryClient = new QueryClient();
 
+import Link from "react-router-dom"; // unused? No.
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
+import ClientIntake from "@/pages/ClientIntake";
+import ClientView from "@/pages/ClientView";
 import ScrollToTop from "@/components/ScrollToTop";
 
 const App = () => {
@@ -36,6 +39,8 @@ const App = () => {
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/terms" element={<Terms />} />
+              <Route path="/intake/:userId" element={<ClientIntake />} />
+              <Route path="/view/:token" element={<ClientView />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

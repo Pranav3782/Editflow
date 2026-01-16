@@ -14,12 +14,13 @@ interface NewJobModalProps {
   onSubmit: (job: {
     title: string;
     clientName: string;
-    editorId: string;
+    editorId: string | null;
     scheduledDate: number;
     estimatedHours: number;
     priority: Priority;
     status: Status;
     notes?: string;
+
   }) => void;
 }
 
@@ -36,44 +37,47 @@ const days = [
 const NewJobModal = ({ isOpen, onClose, editors, onSubmit }: NewJobModalProps) => {
   const [title, setTitle] = useState('');
   const [clientName, setClientName] = useState('');
-  const [editorId, setEditorId] = useState('');
+  const [editorId, setEditorId] = useState<string>('unassigned');
   const [scheduledDate, setScheduledDate] = useState('0');
   const [estimatedHours, setEstimatedHours] = useState('4');
   const [priority, setPriority] = useState<Priority>('medium');
   const [status, setStatus] = useState<Status>('queued');
   const [notes, setNotes] = useState('');
 
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!title.trim() || !clientName.trim() || !editorId) return;
+    if (!title.trim() || !clientName.trim()) return;
 
     onSubmit({
       title: title.trim(),
       clientName: clientName.trim(),
-      editorId,
+      editorId: editorId === 'unassigned' ? null : editorId,
       scheduledDate: parseInt(scheduledDate),
       estimatedHours: parseFloat(estimatedHours) || 4,
       priority,
       status,
       notes: notes.trim() || undefined,
+
     });
 
     // Reset form
     setTitle('');
     setClientName('');
-    setEditorId('');
+    setEditorId('unassigned');
     setScheduledDate('0');
     setEstimatedHours('4');
     setPriority('medium');
     setStatus('queued');
     setNotes('');
+
     onClose();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold">New Job</DialogTitle>
         </DialogHeader>
@@ -105,11 +109,14 @@ const NewJobModal = ({ isOpen, onClose, editors, onSubmit }: NewJobModalProps) =
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label className="text-sm">Assigned Editor</Label>
-              <Select value={editorId} onValueChange={setEditorId} required>
+              <Select value={editorId} onValueChange={setEditorId}>
                 <SelectTrigger className="h-9">
                   <SelectValue placeholder="Select editor" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="unassigned" className="text-muted-foreground italic">
+                    Unassigned (Backlog)
+                  </SelectItem>
                   {editors.map((editor) => (
                     <SelectItem key={editor.id} value={editor.id}>
                       {editor.name}
@@ -175,10 +182,14 @@ const NewJobModal = ({ isOpen, onClose, editors, onSubmit }: NewJobModalProps) =
                   <SelectItem value="queued">Queued</SelectItem>
                   <SelectItem value="in-progress">In Progress</SelectItem>
                   <SelectItem value="review">Review</SelectItem>
+                  <SelectItem value="revision">Revision</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
+
+
 
           <div className="space-y-2">
             <Label htmlFor="notes" className="text-sm">Notes (Optional)</Label>

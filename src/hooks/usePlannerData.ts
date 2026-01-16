@@ -6,13 +6,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 export type Priority = 'low' | 'medium' | 'high';
-export type Status = 'queued' | 'in-progress' | 'review';
+export type Status = 'queued' | 'in-progress' | 'review' | 'revision' | 'approved';
 
 export interface Job {
   id: string; // UUID from DB
   title: string;
   clientName: string;
-  editorId: string; // UUID
+  editorId: string | null; // UUID, can be null for backlog
   scheduledDate: number; // dayIndex 0-6 (Mon-Sun)
   weekStart: string; // ISO date string for the week's start (Monday)
   estimatedHours: number;
@@ -20,12 +20,22 @@ export interface Job {
   status: Status;
   order: number;
   notes?: string;
+  // Premium fields
+  rawFootageUrl?: string;
+  brandAssetsUrl?: string;
+  clientViewToken?: string;
+  deadline?: string;
+  // Phase 2 Fields
+  startedAt?: string;
+  completedAt?: string;
+  actualHours?: number;
 }
 
 export interface Editor {
   id: string; // UUID
   name: string;
   weeklyCapacity: number;
+  dailyCapacityHours: number; // New field
 }
 
 export const usePlannerData = () => {
@@ -76,6 +86,7 @@ export const usePlannerData = () => {
         id: e.id,
         name: e.name,
         weeklyCapacity: e.weekly_capacity,
+        dailyCapacityHours: e.daily_capacity_hours || 8, // Default 8 if missing
       }));
       setEditors(formattedEditors);
 
@@ -108,15 +119,21 @@ export const usePlannerData = () => {
         id: j.id,
         title: j.title,
         clientName: j.client_name,
-        editorId: j.editor_id,
+        editorId: j.editor_id, // can be null
         scheduledDate: j.scheduled_date,
         weekStart: j.week_start,
-        estimatedHours: j.estimated_hours,
+        estimatedHours: j.estimated_hours || 0,
         priority: j.priority,
         status: j.status,
         order: j.order,
-        // Priority: Separate Table Note -> Column Note -> Empty
         notes: notesMap[j.id] || j.notes || '',
+        rawFootageUrl: j.raw_footage_url,
+        brandAssetsUrl: j.brand_assets_url,
+        clientViewToken: j.client_view_token,
+        deadline: j.deadline,
+        startedAt: j.started_at,
+        completedAt: j.completed_at,
+        actualHours: j.actual_hours,
       }));
 
       setJobs(formattedJobs);
@@ -274,6 +291,9 @@ export const usePlannerData = () => {
         priority: job.priority,
         status: job.status,
         order: newJobOrder,
+        raw_footage_url: job.rawFootageUrl,
+        brand_assets_url: job.brandAssetsUrl,
+        deadline: job.deadline,
       };
 
       const { data: jobData, error: jobError } = await supabase
@@ -313,7 +333,10 @@ export const usePlannerData = () => {
         priority: jobData.priority,
         status: jobData.status,
         order: jobData.order,
-        notes: job.notes || ''
+        notes: job.notes || '',
+        rawFootageUrl: job.rawFootageUrl,
+        brandAssetsUrl: job.brandAssetsUrl,
+        deadline: job.deadline,
       };
 
       setJobs(prev => [...prev, newJob]);
@@ -342,6 +365,50 @@ export const usePlannerData = () => {
       if (updates.status) dbUpdates.status = updates.status;
       if (updates.order !== undefined) dbUpdates.order = updates.order;
       if (updates.weekStart) dbUpdates.week_start = updates.weekStart;
+      if (updates.rawFootageUrl !== undefined) dbUpdates.raw_footage_url = updates.rawFootageUrl;
+      if (updates.brandAssetsUrl !== undefined) dbUpdates.brand_assets_url = updates.brandAssetsUrl;
+      if (updates.deadline !== undefined) dbUpdates.deadline = updates.deadline;
+
+      // Phase 2: Time Tracking Logic
+      if (updates.status) {
+        const now = new Date().toISOString();
+        const currentJob = jobs.find(j => j.id === jobId);
+
+        // Transition to In Progress -> Set startedAt
+        if (updates.status === 'in-progress') {
+          if (currentJob && !currentJob.startedAt) {
+            dbUpdates.started_at = now;
+            setJobs(prev => prev.map(j => j.id === jobId ? { ...j, startedAt: now, status: updates.status! } : j));
+          }
+        }
+
+        // Transition to Review or Approved -> Set completedAt and Actual Hours
+        if ((updates.status === 'review' || updates.status === 'approved' || updates.status === 'revision') && currentJob) {
+          // Only finalize if moving from In Progress or Queued (not just shuffling between Review/Approved)
+          // Or just always update finished time if it's the latest?
+          // Requirement: "When job status changes to Review or Approved: Set completed_at"
+          // Let's set it.
+          dbUpdates.completed_at = now;
+
+          // Calculate actual_hours
+          // Rule: completed_at - started_at
+          // If started_at is missing, maybe assume job creation time? No, that's bad.
+          // If missing, use estimated or 0? 
+          // Better: If startedAt exists, calc diff.
+          const startT = currentJob.startedAt ? new Date(currentJob.startedAt).getTime() : 0;
+          if (startT > 0) {
+            const endT = new Date(now).getTime();
+            const diffHours = Math.max(0, (endT - startT) / (1000 * 60 * 60)); // hours
+            // Round to 1 decimal
+            const actual = Math.round(diffHours * 10) / 10;
+            dbUpdates.actual_hours = actual;
+            setJobs(prev => prev.map(j => j.id === jobId ? { ...j, completedAt: now, actualHours: actual, status: updates.status! } : j));
+          } else {
+            // Just Set Completed At
+            setJobs(prev => prev.map(j => j.id === jobId ? { ...j, completedAt: now, status: updates.status! } : j));
+          }
+        }
+      }
 
       if (Object.keys(dbUpdates).length > 0) {
         const { error } = await supabase
@@ -349,6 +416,19 @@ export const usePlannerData = () => {
           .update(dbUpdates)
           .eq('id', jobId);
         if (error) throw error;
+      }
+
+      // Phase 2: Status History Recording (Fire and Forget)
+      if (updates.status) {
+        const currentJob = jobs.find(j => j.id === jobId);
+        supabase.from('job_status_history').insert({
+          job_id: jobId,
+          old_status: currentJob?.status,
+          new_status: updates.status,
+          changed_by: user?.id
+        }).then(({ error }) => {
+          if (error) console.error("Failed to log status history", error);
+        });
       }
 
       // Handle Note Updates
@@ -411,8 +491,8 @@ export const usePlannerData = () => {
     }
   }, [fetchData]);
 
-  const moveJob = useCallback(async (jobId: string, newEditorId: string, newDayIndex: number, newOrder: number) => {
-    // Optimistic update logic (same as before)
+  const moveJob = useCallback(async (jobId: string, newEditorId: string | null, newDayIndex: number, newOrder: number) => {
+    // Optimistic update logic
     setJobs(prev => {
       const jobIndex = prev.findIndex(j => j.id === jobId);
       if (jobIndex === -1) return prev;
@@ -425,7 +505,7 @@ export const usePlannerData = () => {
         if (j.id === jobId) {
           return { ...j, editorId: newEditorId, scheduledDate: newDayIndex, order: newOrder };
         }
-        // Reorder other jobs in the destination cell
+        // Reorder
         if (j.editorId === newEditorId && j.scheduledDate === newDayIndex && j.weekStart === job.weekStart && j.id !== jobId) {
           if (wasInSameCell) {
             const oldOrder = job.order;
@@ -444,34 +524,13 @@ export const usePlannerData = () => {
         return j;
       });
 
-      // We need to persist ALL these changes. 
-      // This is complex to do transactionally in one go with Supabase JS easily without RPC.
-      // For now, we will just update the moved job in DB and hope order consistency holds enough, 
-      // OR loops through modified jobs and updates them.
-      // Let's implement background update.
-
       (async () => {
         try {
-          // Update the main job
           await supabase.from('jobs').update({
-            editor_id: newEditorId,
+            editor_id: newEditorId, // can be null
             scheduled_date: newDayIndex,
             "order": newOrder
           }).eq('id', jobId);
-
-          // Ideally update others too, but for speed in this demo I'll skip complex reorder persistence
-          // unless explicitly required. The prompt says "Keep existing planner logic",
-          // and the existing logic managed state. 
-          // To fully persist drag and drop reordering, we need to save the new orders for ALL affected jobs.
-
-          const affectedJobs = updatedJobs.filter(j =>
-            (j.editorId === newEditorId && j.scheduledDate === newDayIndex) ||
-            (j.editorId === job.editorId && j.scheduledDate === job.scheduledDate) // also old cell might need reorder fixes? 
-          );
-
-          // Let's just update the single job for now to avoid specific "too many requests" issues
-          // But realistically, we should update orders.
-          // I'll leave it as optimistic for now to keep it responsive.
         } catch (e) {
           console.error("Move job failed", e);
         }
@@ -485,15 +544,11 @@ export const usePlannerData = () => {
   const addEditor = useCallback(async (editor: Omit<Editor, 'id'>) => {
     if (!user) return;
     try {
-      // Check Limits
-      // Check Limits
       let planType = 'free';
       try {
         const { data: profile } = await supabase.from('profiles').select('plan_type').single();
         if (profile) planType = profile.plan_type;
-      } catch (e) {
-        // Default to free if profile check fails (e.g. trigger didn't run)
-      }
+      } catch (e) { }
 
       const limit = planType === 'pro' ? 10 : 2;
 
@@ -504,7 +559,8 @@ export const usePlannerData = () => {
       const dbEditor = {
         user_id: user.id,
         name: editor.name,
-        weekly_capacity: editor.weeklyCapacity
+        weekly_capacity: editor.weeklyCapacity,
+        daily_capacity_hours: editor.dailyCapacityHours || 8
       };
 
       const { data, error } = await supabase.from('editors').insert(dbEditor).select().single();
@@ -513,7 +569,8 @@ export const usePlannerData = () => {
       const newEditor: Editor = {
         id: data.id,
         name: data.name,
-        weeklyCapacity: data.weekly_capacity
+        weeklyCapacity: data.weekly_capacity,
+        dailyCapacityHours: data.daily_capacity_hours || 8
       };
 
       setEditors(prev => [...prev, newEditor]);
@@ -538,6 +595,7 @@ export const usePlannerData = () => {
       const dbUpdates: any = {};
       if (updates.name) dbUpdates.name = updates.name;
       if (updates.weeklyCapacity) dbUpdates.weekly_capacity = updates.weeklyCapacity;
+      if (updates.dailyCapacityHours) dbUpdates.daily_capacity_hours = updates.dailyCapacityHours;
 
       await supabase.from('editors').update(dbUpdates).eq('id', editorId);
     } catch (e) {
@@ -581,12 +639,37 @@ export const usePlannerData = () => {
       .sort((a, b) => a.order - b.order);
   }, [jobs, currentWeekStartStr]);
 
+  const getUnassignedJobs = useCallback(() => {
+    return jobs.filter(job => job.editorId === null);
+  }, [jobs]);
+
   const getEditorCapacity = useCallback((editorId: string) => {
     const editorJobs = jobs.filter(job => job.editorId === editorId && job.weekStart === currentWeekStartStr);
     const totalHours = editorJobs.reduce((sum, job) => sum + job.estimatedHours, 0);
     const editor = editors.find(e => e.id === editorId);
     const weeklyCapacity = editor?.weeklyCapacity || 40;
     return Math.min(100, Math.round((totalHours / weeklyCapacity) * 100));
+  }, [jobs, editors, currentWeekStartStr]);
+
+  const getEditorDailyCapacity = useCallback((editorId: string, dateIndex: number) => {
+    const editor = editors.find(e => e.id === editorId);
+    if (!editor) return { used: 0, total: 8, remaining: 8 };
+
+    const dailyJobs = jobs.filter(j =>
+      j.editorId === editorId &&
+      j.scheduledDate === dateIndex &&
+      j.weekStart === currentWeekStartStr
+    );
+
+    const used = dailyJobs.reduce((acc, job) => acc + (job.estimatedHours || 0), 0);
+    const total = editor.dailyCapacityHours || 8;
+
+    return {
+      used,
+      total,
+      remaining: Math.max(0, total - used),
+      isOverCapacity: used > total
+    };
   }, [jobs, editors, currentWeekStartStr]);
 
   const getJobsForMonth = useCallback((year: number, month: number) => {
@@ -629,6 +712,8 @@ export const usePlannerData = () => {
     getEditorJobCount,
     getEditorJobs,
     getEditorCapacity,
+    getEditorDailyCapacity,
+    getUnassignedJobs,
     getJobsForMonth,
     getJobCountForDate,
     planType,
