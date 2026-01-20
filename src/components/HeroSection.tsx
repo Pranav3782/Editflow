@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Play, ArrowRight, Mail, Linkedin, Instagram } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import InteractiveEditorPlanner from './InteractiveEditorPlanner';
 
 const DiscordIcon = ({ size = 20, className = "" }: { size?: number, className?: string }) => (
@@ -56,9 +57,18 @@ const LinktreeIcon = ({ size = 20, className = "" }: { size?: number, className?
 const HeroSection = () => {
   const [email, setEmail] = useState('');
 
+  const handleSubscribe = () => {
+    if (email.trim().length > 0) {
+      toast.success("Thanks for subscribing!");
+      setTimeout(() => {
+        window.open('https://linktr.ee/entrext.pro', '_blank', 'noopener,noreferrer');
+      }, 1500);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      window.open('https://linktr.ee/entrext.pro', '_blank', 'noopener,noreferrer');
+      handleSubscribe();
     }
   };
 
@@ -128,16 +138,10 @@ const HeroSection = () => {
               onKeyDown={handleKeyDown}
             />
             <Button
-              asChild
               className="rounded-full px-8 bg-warning hover:bg-warning/90 text-primary-foreground font-semibold shadow-lg h-10"
+              onClick={handleSubscribe}
             >
-              <a
-                href="https://linktr.ee/entrext.pro"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Subscribe
-              </a>
+              Subscribe
             </Button>
           </div>
 
