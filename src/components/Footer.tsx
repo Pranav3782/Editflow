@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { SOCIAL_LINKS } from './SocialIcons';
 
 const Footer = () => {
   return (
@@ -6,14 +7,34 @@ const Footer = () => {
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
           {/* Brand */}
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center gap-2">
-              <img src="/logo.png" alt="EditFlow logo" className="h-8 w-auto object-contain flex-shrink-0 rounded-xl" />
-              <span className="font-semibold text-lg text-foreground">EditFlow</span>
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-2">
+                <img src="/logo.png" alt="EditFlow logo" className="h-8 w-auto object-contain flex-shrink-0 rounded-xl" />
+                <span className="font-semibold text-lg text-foreground">EditFlow</span>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
+                The simplest way to manage your video editing team's workload.
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
-              The simplest way to manage your video editing team's workload.
-            </p>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Community</span>
+              <div className="flex items-center gap-3">
+                {SOCIAL_LINKS.map(({ label, href, Icon }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label={label}
+                  >
+                    <Icon size={18} />
+                  </a>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Product */}
