@@ -16,12 +16,9 @@ const faqs = [
     },
     {
         question: "Can I try it for free?",
-        answer: "Yes! We offer a generous free tier that includes up to 2 editors and basic planning features. You can upgrade to Pro or Agency plans anytime as your team grows."
+        answer: "Yes! We offer a generous free tier that includes up to 2 editors and basic planning features. You can upgrade to the Pro plan anytime as your team grows."
     },
-    {
-        question: "Is EditFlow suitable for large agencies?",
-        answer: "Absolutely! Our Agency plan supports unlimited editors and includes advanced features like AI workload optimization and custom analytics, making it perfect for scaling teams."
-    },
+
     {
         question: "How secure is my data?",
         answer: "We take security seriously. All your data is encrypted in transit and at rest. We use industry-standard authentication (Supabase) to ensure only your team can access your workspace."

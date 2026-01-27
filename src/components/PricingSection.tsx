@@ -13,7 +13,6 @@ const plans = [
       'Up to 2 editors',
       'Weekly planner view',
       'Basic job cards',
-      'Email support',
     ],
     cta: 'Get Started',
     highlighted: false,
@@ -29,27 +28,11 @@ const plans = [
       'Priority & status tags',
       'Capacity tracking',
       'Client management',
-      'Priority support',
     ],
     cta: 'Start Free Trial',
     highlighted: true,
   },
-  {
-    name: 'Agency',
-    price: '$79',
-    period: '/month',
-    description: 'For larger teams with advanced needs',
-    features: [
-      'Unlimited editors',
-      'AI workload optimization',
-      'Advanced analytics',
-      'API access',
-      'Custom integrations',
-      'Dedicated support',
-    ],
-    cta: 'Subscribe',
-    highlighted: false,
-  },
+
 ];
 
 const PricingSection = () => {
@@ -106,8 +89,6 @@ const PricingSection = () => {
 
     if (plan === 'pro') {
       startCheckout('pro');
-    } else if (plan === 'agency') {
-      startCheckout('agency');
     }
   };
 
@@ -123,7 +104,7 @@ const PricingSection = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {plans.map((plan, index) => (
             <div
               key={index}

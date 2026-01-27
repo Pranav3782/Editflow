@@ -19,6 +19,8 @@ import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
 import ClientIntake from "@/pages/ClientIntake";
 import ClientView from "@/pages/ClientView";
+import BlogList from "@/pages/BlogList";
+import BlogPostPage from "@/pages/BlogPost";
 import ScrollToTop from "@/components/ScrollToTop";
 
 const App = () => {
@@ -41,6 +43,8 @@ const App = () => {
               <Route path="/terms" element={<Terms />} />
               <Route path="/intake/:userId" element={<ClientIntake />} />
               <Route path="/view/:token" element={<ClientView />} />
+              <Route path="/blog" element={<BlogList />} />
+              <Route path="/blog/:slug" element={<BlogPostPage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
